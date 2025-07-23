@@ -1,0 +1,17 @@
+{
+  "categories": ["Science", "History", "Movies"],
+  "questions": {
+    "Science": [
+      { "value": 100, "question": "What is H2O?", "answer": "Water" },
+      { "value": 200, "question": "What planet is known as the Red Planet?", "answer": "Mars" }
+    ],
+    "History": [
+      { "value": 100, "question": "Who was the first President of the USA?", "answer": "George Washington" },
+      { "value": 200, "question": "In what year did WW2 end?", "answer": "1945" }
+    ],
+    "Movies": [
+      { "value": 100, "question": "Who directed 'Inception'?", "answer": "Christopher Nolan" },
+      { "value": 200, "question": "What is the name of the wizarding school in Harry Potter?", "answer": "Hogwarts" }
+    ]
+  }
+}
