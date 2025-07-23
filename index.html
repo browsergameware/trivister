@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>TRIVISTER</title>
+    <link rel="stylesheet" href="https://cdn360.pages.dev/gameware/fonts/library.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Barclay Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+        }
+
+        body {
+            margin: 0;
+            background-color: #18168f;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            padding: 1rem;
+            text-align: center;
+            background: #18168f;
+            width: 100%;
+        }
+
+        input[type="file"] {
+            margin: 1rem 0;
+        }
+
+        .board {
+            display: grid;
+            gap: 4px;
+            width: 100%;
+            max-width: 1200px;
+            margin: auto;
+            padding: 10px;
+        }
+
+        .category, .tile {
+            background-color: #18168f;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            border: 2px solid #FFFFFF33;
+            cursor: pointer;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .category {
+            color: #ffffff;
+            background-color: #18168f;
+            cursor: default;
+        }
+
+        .tile {
+            color: #ffff00;
+        }
+
+        .tile.disabled {
+            background-color: #222;
+            pointer-events: none;
+            color: #666;
+        }
+
+        h2 {
+            color: #ffff00;
+            font-size: 50px;
+        }
+
+        h3 {
+            font-style: italic !important;
+            font-size: 60px;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 100vw;
+            background: #18168f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            display: none;
+            flex-direction: column;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .modal h2 {
+            margin-bottom: 1rem;
+        }
+
+        .modal button {
+            margin-top: 1rem;
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            background-color: #18168f;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        @media (min-width: 600px) {
+            .board {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+        }
+
+        @media (max-width: 599px) {
+            .board {
+                grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            }
+
+            .category, .tile {
+                font-size: 0.8rem;
+                padding: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+    <h1>TRIVISTER Game Board</h1>
+    <input type="file" accept=".json" id="fileInput">
+    </header>
+
+    <div class="board" id="gameBoard"></div>
+
+    <div class="modal" id="modal">
+    <h2 id="questionText"></h2>
+    <button id="revealBtn">Reveal Answer</button>
+    <h3 id="answerText" style="display:none;"></h3>
+    <button id="closeBtn" style="display:none;" onclick="closeModal()">Close</button>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const gameBoard = document.getElementById('gameBoard');
+        const modal = document.getElementById('modal');
+        const questionText = document.getElementById('questionText');
+        const answerText = document.getElementById('answerText');
+        const revealBtn = document.getElementById('revealBtn');
+        const closeBtn = document.getElementById('closeBtn');
+
+        let questionsData = {};
+
+        fileInput.addEventListener('change', e => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = event => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    setupBoard(data);
+                } catch (err) {
+                    alert("Invalid JSON file.");
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        function setupBoard(data) {
+            gameBoard.innerHTML = '';
+            questionsData = data.questions || {};
+
+            const categories = data.categories || Object.keys(questionsData);
+            const maxLength = Math.max(...categories.map(cat => questionsData[cat]?.length || 0));
+
+            gameBoard.style.gridTemplateColumns = `repeat(${categories.length}, 1fr)`;
+
+            // Add category headers
+            categories.forEach(cat => {
+                const div = document.createElement('div');
+                div.className = 'category';
+                div.textContent = cat;
+                gameBoard.appendChild(div);
+            });
+
+            // Add tiles
+            for (let i = 0; i < maxLength; i++) {
+                categories.forEach(cat => {
+                    const qList = questionsData[cat];
+                    const q = qList && qList[i];
+                    const tile = document.createElement('div');
+                    tile.className = 'tile';
+
+                    if (q) {
+                        tile.textContent = q.value;
+                        tile.addEventListener('click', () => showQuestion(tile, q));
+                    } else {
+                        tile.classList.add('disabled');
+                    }
+
+                    gameBoard.appendChild(tile);
+                });
+            }
+        }
+
+        function showQuestion(tile, questionObj) {
+            tile.classList.add('disabled');
+            tile.removeEventListener('click', () => showQuestion(tile, questionObj));
+            questionText.textContent = questionObj.question;
+            answerText.textContent = questionObj.answer;
+            answerText.style.display = 'none';
+            revealBtn.style.display = 'inline-block';
+            closeBtn.style.display = 'none';
+            modal.style.display = 'flex';
+        }
+
+        revealBtn.addEventListener('click', () => {
+            answerText.style.display = 'block';
+            revealBtn.style.display = 'none';
+            closeBtn.style.display = 'inline-block';
+        });
+
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
